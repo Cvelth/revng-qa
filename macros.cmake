@@ -2,19 +2,26 @@ set(ARTIFACT_CATEGORIES "")
 set(DERIVED_ARTIFACTS "")
 
 macro(add_prefix PREFIX PATHS OUTPUT_VARIABLE)
-  string(STRIP "${PATHS}" PATHS)
+  if(DEFINED OUTPUT_VARIABLE)
+    message(FATAL_ERROR "Silently overriding a variable.")
+  endif()
+
   set("${OUTPUT_VARIABLE}" "")
-  foreach(PATH "${PATHS}")
-    set("${OUTPUT_VARIABLE}" "${${OUTPUT_VARIABLE}} ${PREFIX}${PATH}")
+  foreach(PATH ${PATHS})
+    string(STRIP "${PATH}" PATH)
+    set("${OUTPUT_VARIABLE}" "${${OUTPUT_VARIABLE}};${PREFIX}${PATH}")
   endforeach()
   string(STRIP "${${OUTPUT_VARIABLE}}" "${OUTPUT_VARIABLE}")
 endmacro()
 
 macro(category_to_path CATEGORY OUTPUT_VARIABLE)
-  if("${CATEGORY}" MATCHES "^abi_test_function_library_(.+)")
-    set("${OUTPUT_VARIABLE}" "tests/abi/${CMAKE_MATCH_1}")
-  elseif("${CATEGORY}" MATCHES "^describe_abi_test_functions_(.+)")
-    set("${OUTPUT_VARIABLE}" "tests/abi/${CMAKE_MATCH_1}")
+  if(DEFINED OUTPUT_VARIABLE)
+    message(FATAL_ERROR "Silently overriding a variable.")
+  endif()
+
+  if("${CATEGORY}" MATCHES "^abi_test_function_library_.+" OR 
+     "${CATEGORY}" MATCHES "^describe_abi_test_functions_.+")
+     set("${OUTPUT_VARIABLE}" "tests/abi")
   else()
     string(REPLACE "_" "/" "${OUTPUT_VARIABLE}" "${CATEGORY}")
   endif()
@@ -37,17 +44,9 @@ macro(register_artifact CATEGORY NAME CONFIGURATION SOURCES)
   # Sources are in CATEGORY/file.c or CATEGORY/CONFIGURATION/file.S
   category_to_path("${CATEGORY}" SOURCES_PATH)
 
-  if("${CATEGORY}" MATCHES "^abi_test_function_library_.+" OR 
-     "${CATEGORY}" MATCHES "^describe_abi_test_functions_.+")
-    get_filename_component(INPUT_PATH ${SOURCES_PATH} DIRECTORY)
-  else()
-    set(INPUT_PATH "${SOURCES_PATH}")
-    if(NOT "${CONFIGURATION}" STREQUAL "")
-      set(INPUT_PATH "${INPUT_PATH}/${CONFIGURATION}")
-    endif()
-  endif()
-
-  if(NOT "${CONFIGURATION}" STREQUAL "")
+  if(NOT "${CATEGORY}" MATCHES "^abi_test_function_library_.+" AND
+     NOT "${CATEGORY}" MATCHES "^describe_abi_test_functions_.+" AND
+     NOT "${CONFIGURATION}" STREQUAL "")
     set(SOURCES_PATH "${SOURCES_PATH}/${CONFIGURATION}")
   endif()
 
@@ -55,11 +54,11 @@ macro(register_artifact CATEGORY NAME CONFIGURATION SOURCES)
     list(APPEND "ARTIFACTS_${CATEGORY}" "${NAME}")
   endif()
   list(APPEND "ARTIFACT_CONFIGURATION_${CATEGORY}__${NAME}" "${CONFIGURATION}")
-  add_prefix("${INPUT_PATH}/" "${SOURCES}" "ARTIFACT_SOURCES_${CATEGORY}__${NAME}__${CONFIGURATION}")
+  add_prefix("${SOURCES_PATH}/" "${SOURCES}" "ARTIFACT_SOURCES_${CATEGORY}__${NAME}__${CONFIGURATION}")
 
   if(IN_REVNG_QA)
     foreach(SOURCE ${SOURCES})
-      install(FILES ${CMAKE_SOURCE_DIR}/${INPUT_PATH}/${SOURCE}
+      install(FILES ${CMAKE_SOURCE_DIR}/${SOURCES_PATH}/${SOURCE}
               DESTINATION "share/revng/qa/${SOURCES_PATH}/sources/")
     endforeach()
   endif()

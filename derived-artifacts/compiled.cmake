@@ -29,17 +29,18 @@ set(CFLAGS_CATEGORY_tests_runtime -std=c99 -fno-pic -fno-pie -ggdb3 -fno-stack-p
 set(CFLAGS_CATEGORY_tests_analysis_Decompilation -fno-inline)
 set(CFLAGS_CATEGORY_tests_analysis_PromoteStackPointer -no-pie -fno-unroll-loops -fno-inline -O1 -fno-stack-protector)
 
-set(CFLAGS_CATEGORY_abi_test_function_library_SystemV_x86_64 ${CFLAGS_CATEGORY_tests_runtime} -DABIDEF=)
-set(CFLAGS_CATEGORY_abi_test_function_library_SystemV_x86 ${CFLAGS_CATEGORY_tests_runtime} -DABIDEF=)
+set(CFLAGS_CATEGORY_abi_test_function_library_COMMON ${CFLAGS_CATEGORY_tests_runtime} -I${CMAKE_SOURCE_DIR}/tests/abi/include -I${CMAKE_SOURCE_DIR}/tests/abi/generated/include)
+set(CFLAGS_CATEGORY_abi_test_function_library_SystemV_x86_64 ${CFLAGS_CATEGORY_abi_test_function_library_COMMON} -DABIDEF=)
+#set(CFLAGS_CATEGORY_abi_test_function_library_SystemV_x86 ${CFLAGS_CATEGORY_abi_test_function_library_COMMON} -DABIDEF=)
 # ...
-set(CFLAGS_CATEGORY_abi_test_function_library_Microsoft_x86_stdcall ${CFLAGS_CATEGORY_tests_runtime} -DABIDEF=__stdcall)
+#set(CFLAGS_CATEGORY_abi_test_function_library_Microsoft_x86_stdcall ${CFLAGS_CATEGORY_tests_runtime} -DABIDEF=__stdcall)
 # ...
 
-set(CFLAGS_CATEGORY_describe_abi_test_functions_COMMON -O2 -fno-stack-protector -fomit-frame-pointer -fno-reorder-functions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-stack-check -fno-optimize-sibling-calls -fno-inline-functions -fno-inline-small-functions -fno-align-functions -fno-optimize-sibling-calls -Wl,--gc-sections -ffunction-sections)
+set(CFLAGS_CATEGORY_describe_abi_test_functions_COMMON -O2 -fno-stack-protector -fomit-frame-pointer -fno-reorder-functions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-stack-check -fno-optimize-sibling-calls -fno-inline-functions -fno-inline-small-functions -fno-align-functions -fno-optimize-sibling-calls -Wl,--gc-sections -ffunction-sections -I${CMAKE_SOURCE_DIR}/tests/abi/include -I${CMAKE_SOURCE_DIR}/tests/abi/generated/include)
 set(CFLAGS_CATEGORY_describe_abi_test_functions_SystemV_x86_64 ${CFLAGS_CATEGORY_describe_abi_test_functions_COMMON} -DABIDEF=)
-set(CFLAGS_CATEGORY_describe_abi_test_functions_SystemV_x86 ${CFLAGS_CATEGORY_describe_abi_test_functions_COMMON} -DABIDEF=)
+# set(CFLAGS_CATEGORY_describe_abi_test_functions_SystemV_x86 ${CFLAGS_CATEGORY_describe_abi_test_functions_COMMON} -DABIDEF=)
 # ...
-set(CFLAGS_CATEGORY_describe_abi_test_functions_Microsoft_x86_stdcall ${CFLAGS_CATEGORY_describe_abi_test_functions_COMMON} -DABIDEF=__stdcall)
+# set(CFLAGS_CATEGORY_describe_abi_test_functions_Microsoft_x86_stdcall ${CFLAGS_CATEGORY_describe_abi_test_functions_COMMON} -DABIDEF=__stdcall)
 # ...
 
 macro(artifact_handler CATEGORY INPUT_FILE CONFIGURATION OUTPUT TARGET_NAME)
