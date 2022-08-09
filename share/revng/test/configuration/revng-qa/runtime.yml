@@ -38,3 +38,4 @@ sources:
     - [i386]
     members:
     - tests/runtime/calc.c
+    - tests/runtime/meta.c
