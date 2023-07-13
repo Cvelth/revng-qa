@@ -166,7 +166,14 @@ def return_from_function(architecture, config):
     jinja_template = jinja2.Environment().from_string(
         architecture["templates"]["return_from_function"]
     )
-    return jinja_template.render({"stack_size": config["stack_byte_count"]})
+    return jinja_template.render()
+
+
+def return_from_function_with_cleanup(architecture, config):
+    jinja_template = jinja2.Environment().from_string(
+        architecture["templates"]["return_from_function_with_cleanup"]
+    )
+    return jinja_template.render()
 
 
 def asm(input: str):
@@ -218,6 +225,9 @@ def render_function_description(jinja_env, architectures, config, functions, out
             "save_return_address": asm(save_return_address(architecture)),
             "restore_return_address": asm(restore_return_address(architecture, config)),
             "return_from_function": asm(return_from_function(architecture, config)),
+            "return_from_function_with_cleanup": asm(
+                return_from_function_with_cleanup(architecture, config)
+            ),
         }
 
         combined = dictionary["register_count"] * dictionary["register_size"]

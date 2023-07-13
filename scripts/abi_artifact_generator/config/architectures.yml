@@ -8,6 +8,8 @@
       call {{ function_name }}
     return_from_function: |
       ret
+    return_from_function_with_cleanup: |
+      ret $8
     fill_a_register: |
       mov {{ location }} + {{ offset }}, %{{ register }}
     push_to_stack: |
@@ -29,6 +31,8 @@
       call {{ function_name }}
     return_from_function: |
       ret
+    return_from_function_with_cleanup: |
+      ret $4
     fill_a_register: |
       mov {{ location }} + {{ offset }}, %{{ register }}
     push_to_stack: |
@@ -49,6 +53,8 @@
     call_a_function: |
       bl {{ function_name }}
     return_from_function: |
+      ret
+    return_from_function_with_cleanup: |
       ret
     fill_a_register: |
       adrp {{ register }}, {{location}}
@@ -72,6 +78,8 @@
     call_a_function: |
       bl {{ function_name }}
     return_from_function: |
+      bx lr
+    return_from_function_with_cleanup: |
       bx lr
     fill_a_register: |
       movw {{ register }}, #:lower16:{{ location }}

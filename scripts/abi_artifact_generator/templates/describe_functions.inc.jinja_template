@@ -65,7 +65,9 @@ void describe_/*( name )*/(void) {
       /*( fill_stack_with_random_data )*/
       /*( fill_registers_with_random_data )*/
       /*( call_a_function(name) )*/
+#ifndef CALLEE_CLEANED_ARGUMENTS
       /*( restore_stack )*/
+#endif
     );
 
     longjmp(jump_buffer, 1);
@@ -89,7 +91,11 @@ __asm__ ( /* Define the return value setup function */
       /*( fill_stack_with_random_data )*/
       /*( fill_registers_with_random_data )*/
       /*( restore_return_address )*/
+#ifndef CALLEE_CLEANED_ARGUMENTS
       /*( return_from_function )*/
+#else
+      /*( return_from_function_with_cleanup )*/
+#endif
 );
 
 static size_t runtime_endianness_check() {
