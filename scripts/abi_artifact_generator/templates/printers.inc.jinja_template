@@ -1,0 +1,199 @@
+/*#-
+This template file is distributed under the MIT License. See LICENSE.md for details.
+#*/
+
+/*(- generation_notice )*/
+
+#include "../common.h"
+#include "../functions.h"
+#include "../types.h"
+
+_Static_assert(sizeof(uint8_t) == 1, "A type with size == 1 is required.");
+#define MAKE_PRINT_HELPER(TYPE, POINTER, RESULT) \
+  typedef union {                                \
+    TYPE v;                                      \
+    uint8_t a[sizeof(TYPE)];                     \
+  } printing_##RESULT;                           \
+  printing_##RESULT *RESULT = (printing_##RESULT *) POINTER
+
+#define PRINT_BYTES(TYPE, HELPER)                          \
+  do {                                                     \
+    printf("[ ");                                          \
+    for (unsigned i = 0; i < sizeof(TYPE) - 1; ++i)        \
+      printf("0x%.2hhx, ", (HELPER)->a[i]);                \
+    printf("0x%.2hhx ]\n", (HELPER)->a[sizeof(TYPE) - 1]); \
+  } while (0)
+#define PRINT_A_WORD(LOCATION, INDEX)  \
+  do {                                                        \
+    typedef uint8_t single_word[/*( register_size )*/];       \
+    MAKE_PRINT_HELPER(/*( register_type )*/,                  \
+                      (single_word *) (LOCATION),             \
+                      word_printing_helper);                  \
+    printf("      - Name: \"%s\"\n        "                   \
+           "Value: 0x%0/*( register_size * 2 )*/zx\n",        \
+           register_list[INDEX],                              \
+           word_printing_helper->v);                          \
+    printf("        Bytes: ");                                \
+    PRINT_BYTES(/*( register_type )*/, word_printing_helper); \
+  } while (0)
+  
+
+static char *register_list[/*( register_count )*/] = {
+  /*{ for register in register_list -}*/
+  /*( "\"" + register + "\"" -)*/
+  /*{- if not loop.last -}*/ , /*{ endif -}*/
+  /*{- endfor }*/
+};
+
+extern uint8_t randomized_state[/*( generated_byte_count )*/];
+
+void print_a_word(void *location, uint32_t index) {
+  typedef uint8_t single_word[/*( register_size )*/];
+  MAKE_PRINT_HELPER(/*( register_type )*/, (single_word *) location, word_printing_helper);
+  printf("      - Name: \"%s\"\n        Value: 0x%0/*( register_size * 2 )*/zx\n",
+         register_list[index],
+         word_printing_helper->v);
+  printf("        Bytes: ");
+  PRINT_BYTES(/*( register_type )*/, word_printing_helper);
+}
+
+void print_current_state(void) {
+  /* Dump registers */
+  puts("  - Registers:");
+  for (uint32_t index = 0; index < /*( register_count )*/; ++index)
+    PRINT_A_WORD(randomized_state + index * /*( register_size )*/, index);
+
+  /* Dump Stack */
+  printf("    Stack: ");
+  typedef uint8_t stack_state[/*( stack_byte_count )*/];
+  stack_state *state_ptr = (stack_state *) (randomized_state + /*( register_count * register_size )*/);
+  MAKE_PRINT_HELPER(stack_state, state_ptr, stack_printing_helper);
+  PRINT_BYTES(stack_state, stack_printing_helper);
+}
+
+#define PRINT(TYPE, POINTER)                        \
+  do {                                              \
+    printf("      - Type: " #TYPE " # size = %zu\n" \
+           "        Bytes: ",                       \
+           sizeof(TYPE));                           \
+    MAKE_PRINT_HELPER(TYPE, POINTER, local_helper); \
+    PRINT_BYTES(TYPE, local_helper);                \
+  } while (0)
+
+#define POINTER(TYPE, POINTER)                        \
+  do {                                                \
+    printf("      - Type: " #TYPE " # size = %zu\n"   \
+           "        Pointer: 0x%zx\n        Bytes: ", \
+           sizeof(TYPE),                              \
+           (/*( register_type )*/) POINTER);          \
+    MAKE_PRINT_HELPER(TYPE *, POINTER, local_helper); \
+    PRINT_BYTES(TYPE *, local_helper);                \
+  } while (0)
+
+/*{ for name, arguments in argument_functions.items() -}*/
+NOINLINE void ABIDEF print_/*( name )*/(void) {
+  puts("    Function: \"/*( "test_" + name )*/\"");
+  puts("    Arguments:");
+
+  current_offset = 0;
+
+  /*{- for type in arguments }*/
+  /*( type )*/ argument_/*( loop.index - 1 )*/; (void) argument_/*( loop.index - 1 )*/;
+  if (sizeof(/*( type )*/) <= ARGUMENT_SIZE_LIMIT(/*( type )*/, argument_/*( loop.index - 1 )*/) && !IS_PACKED(/*( type )*/)) {
+    PRINT(/*( type )*/, (/*( type )*/ *) ((uint8_t *) printable_location + current_offset));
+    current_offset += sizeof(/*( type )*/);
+  } else {
+    POINTER(/*( type )*/, (/*( type )*/ **) ((uint8_t *) printable_location + current_offset));
+    current_offset += sizeof(/*( type )*/ *);
+  }
+/*{ endfor }*/
+  puts("");
+}
+
+/*{ endfor -}*/
+
+static jmp_buf jump_buffer;
+/*{ for name, return_value_type in return_value_functions.items() -}*/
+NOINLINE void print_/*( name )*/(void) {
+  puts("    Function: \"/*( "test_" + name )*/\"");
+  puts("    ReturnValue:");
+
+  /*( return_value_type )*/ return_value;
+  if (sizeof(return_value) <= RETURN_VALUE_SIZE_LIMIT(/*( return_value_type )*/, return_value) && !IS_PACKED(/*( return_value_type )*/)) {
+    PRINT(/*(- return_value_type )*/, (/*(- return_value_type )*/ *) printable_location);
+  } else {
+    POINTER(/*(- return_value_type )*/, (/*(- return_value_type )*/ **) printable_location);
+  }
+
+  puts("");
+}
+
+/*{ endfor -}*/
+
+static jmp_buf jump_buffer;
+/*{ for name, return_value_type in return_value_functions.items() -}*/
+NOINLINE void print_/*( name )*/_location(void) {
+  puts("    Function: \"/*( "test_" + name )*/\"");
+  puts("    RegistersAfterTheCall:");
+
+  /*{ for index, register in enumerate(register_list) -}*/
+  PRINT_A_WORD(((/*( register_type )*/ *) printable_location) + /*( index )*/, /*( index )*/);
+  /*{ endfor -}*/
+
+  puts("");
+}
+
+/*{ endfor -}*/
+
+uint8_t printable_data[/*( generated_byte_count )*/];
+void *printable_location = &printable_data;
+ptrdiff_t current_offset = 0;
+
+static size_t runtime_endianness_check() {
+  size_t i = 1;
+  return !*((uint8_t *) &i);
+}
+
+int main(void) {
+  puts("---");
+
+#ifdef TARGET_x86_64
+  puts("TargetArchitecture: x86_64");
+#elif TARGET_i386
+  puts("TargetArchitecture: x86");
+#elif TARGET_aarch64
+  puts("TargetArchitecture: aarch64");
+#elif TARGET_arm
+  puts("TargetArchitecture: arm");
+#else
+  puts("TargetArchitecture: UNSUPPORTED");
+  _Static_assert(0, "unsupported platform architecture");
+#endif
+
+#ifdef ENDIANNESS_LITTLE
+  assert(!runtime_endianness_check() && "little endianness expected!");
+  puts("IsLittleEndian: yes");
+#elif defined(ENDIANNESS_BIG)
+  assert(runtime_endianness_check() && "big endianness expected!");
+  puts("IsLittleEndian: no");
+#endif
+
+  puts("Iterations:");
+  for (uint32_t index = 0; index < /*( iteration_count )*/; ++index) {
+    /*{ for function_name, arguments in argument_functions.items() -}*/
+    setup_/*( function_name )*/();
+    print_/*( function_name )*/();
+    /*{ endfor -}*/
+    /*{ for function_name, arguments in return_value_functions.items() -}*/
+    test_/*( function_name )*/();
+    print_/*( function_name )*/();
+    /*{ endfor }*/
+    /*{ for function_name, arguments in return_value_functions.items() -}*/
+    setup_/*( function_name )*/_location();
+    print_/*( function_name )*/_location();
+    /*{ endfor }*/
+  }
+
+  puts("...");
+  return 0;
+}

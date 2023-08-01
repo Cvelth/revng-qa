@@ -1,0 +1,58 @@
+/*#-
+This template file is distributed under the MIT License. See LICENSE.md for details.
+#*/
+
+/*(- generation_notice )*/
+
+#include "../common.h"
+#include "../functions.h"
+
+/*( register_type )*/ randomized_state[/*( generated_byte_count // register_size )*/];
+void print_current_state(void);
+
+/* LFSR generator */
+
+static uint64_t lfsr = /*( lfsr_seed )*/;
+uint64_t get_next_lfsr(uint32_t iteration_count) {
+  for (uint32_t iteration = 0; iteration < iteration_count; ++iteration)
+    lfsr = (lfsr >> 1) | ((((lfsr >> 1) ^ (lfsr >> 2)) & 1) << 63);
+  return lfsr;
+}
+
+_Static_assert(sizeof(uint8_t) == 1, "A type with size == 1 is required.");
+void regenerate_state(void) {
+  for (uint32_t counter = 0; counter < /*( generated_byte_count )*/; ++counter)
+    *((uint8_t *) randomized_state + counter) = (uint8_t) get_next_lfsr(8);
+}
+
+static jmp_buf jump_buffer;
+
+/*{ for name, arguments in argument_functions.items() -}*/
+void execute_/*( name )*/(void);
+void setup_/*( name )*/(void) {
+  regenerate_state();
+  print_current_state();
+
+  if (setjmp(jump_buffer) == 0) {
+    execute_/*( name )*/();
+    longjmp(jump_buffer, 1);
+  }
+}
+
+/*{ endfor }*/
+
+/*{ for name, return_value_type in return_value_functions.items() -}*/
+void execute_/*( name )*/_location(void);
+void setup_/*( name )*/_location(void) {
+  regenerate_state();
+  print_current_state();
+
+  if (setjmp(jump_buffer) == 0) {
+    execute_/*( name )*/_location();
+    longjmp(jump_buffer, 1);
+  }
+}
+
+/*{ endfor }*/
+
+void *saved_return_address;

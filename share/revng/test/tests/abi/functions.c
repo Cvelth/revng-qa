@@ -8,9 +8,11 @@
 
 /* RUN-default: nope */
 
-ABIDEF void *set_return_value_up(void) {
+void * ABIDEF set_return_value_up(void) {
   return 0;
 }
+
+void ABIDEF restore_stack_pointer(void) {}
 
 static size_t runtime_endianness_check() {
   size_t i = 1;
@@ -27,3 +29,7 @@ int main(void) {
 
   return 0;
 };
+
+uint8_t printable_data[/* doesn't matter */ 1];
+void *printable_location = &printable_data;
+ptrdiff_t current_offset = 0;

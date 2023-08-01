@@ -1,11 +1,13 @@
 #pragma once
+/*( _ )*/
 
 /*#-
 This template file is distributed under the MIT License. See LICENSE.md for details.
 #*/
 
-/*( generation_notice )*/
+/*(- generation_notice )*/
 
+#include <stddef.h>
 #include <stdint.h>
 
 /*
@@ -13,6 +15,15 @@ This template file is distributed under the MIT License. See LICENSE.md for deta
  */
 #ifndef ABIDEF
 #define ABIDEF
+#endif
+
+/*
+ * Define a `NOINLINE` specifier
+ */
+#ifdef _MSC_VER
+#define NOINLINE __declspec(noinline)
+#else
+#define NOINLINE __attribute__((noinline))
 #endif
 
 /*
@@ -46,12 +57,25 @@ typedef struct {
 
 /*{ endfor -}*/
 
+#pragma pack(push, 1)
+
+/*{ for name, fields in packed_structs.items() -}*/
+typedef struct {
+/*{ for field in fields -}*/
+  /*( field | indent(2, true) )*/;
+/*{ endfor -}*/
+} /*( name )*/;
+
+/*{ endfor -}*/
+#pragma pack(pop)
+
 /*
  * Functions designed to test argument passing
  */
 
 /*{ for name, arguments in argument_functions.items() -}*/
-void __attribute__((noinline, weak)) ABIDEF /*( name )*/(
+NOINLINE void setup_/*( name )*/(void);
+NOINLINE void ABIDEF test_/*( name )*/(
   /*{- for type in arguments -}*/
   /*( type )*/ argument_/*( loop.index - 1 )*/
   /*{- if not loop.last -}*/ , /*{ endif -}*/
@@ -62,8 +86,9 @@ void __attribute__((noinline, weak)) ABIDEF /*( name )*/(
  * Functions designed to test value returning
  */
 
+void * ABIDEF set_return_value_up(void);
+void ABIDEF restore_stack_pointer(void);
 /*{ for name, return_value_type in return_value_functions.items() -}*/
-/*( return_value_type )*/ __attribute__((noinline)) /*( name )*/(void);
+NOINLINE void setup_/*( name )*/_location(void);
+NOINLINE /*( return_value_type )*/ ABIDEF test_/*( name )*/(void);
 /*{ endfor }*/
-ABIDEF void *set_return_value_up(void);
-

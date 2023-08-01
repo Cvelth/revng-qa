@@ -1,0 +1,63 @@
+tags:
+  - name: abi-test-internals
+  - name: abi-test-function-printers
+    implies: [abi-test-internals, has-special-compilation-requirements]
+    variables:
+      GCC_CFLAGS:
+        - -std=c99
+        - -fno-pic
+        - -fno-pie
+        - -fno-stack-protector
+        - -O1
+
+  - name: abi-described-test-functions
+    implies: [abi-test-internals, has-special-compilation-requirements]
+    variables:
+      GCC_CFLAGS:
+        - -std=c99
+        - -fno-pic
+        - -fno-pie
+        - -fno-stack-protector
+        - -O1
+
+  - name: abi-description-assembly
+    implies: [abi-test-internals, has-special-compilation-requirements]
+  - name: abi-description-assembly-msvc
+    implies: [has-special-compilation-requirements]
+
+  - name: abi-test-function-prototypes
+    variables:
+      GCC_CFLAGS:
+        - -std=c99
+        - -fno-pic
+        - -fno-pie
+        - -fno-stack-protector
+        - -ggdb3
+        - -O3
+
+commands:
+  - type: revng-qa.compiled-to-object-file
+    from:
+      - type: source
+        filter: abi-test-internals
+    suffix: .o
+    command: ${TRIPLE}gcc $INPUT -o ${OUTPUT} $CFLAGS $GCC_CFLAGS -c
+
+  - type: revng-qa.compiled-to-object-file
+    from:
+      - type: source
+        filter: abi-description-assembly-msvc
+    suffix: .obj
+    pool: wine
+    command: |-
+      timeout 30 x86_64-winsdk-vc16-ml -nologo $CFLAGS -I$$(dirname $INPUT) z:\$INPUT -Fo$OUTPUT -c
+
+#   - type: revng-qa.compiled-with-debug-info
+#     from:
+#       - type: revng-qa.compiled-to-object-file
+#         filter: abi-described-test-functions
+#       - type: revng-qa.compiled-to-object-file
+#         filter: abi-test-function-printers
+#       - type: revng-qa.compiled-to-object-file
+#         filter: abi-description-assembly
+#     command: ${TRIPLE}gcc $INPUT1 $INPUT2 $INPUT3 -o ${OUTPUT} $CFLAGS $GCC_CFLAGS

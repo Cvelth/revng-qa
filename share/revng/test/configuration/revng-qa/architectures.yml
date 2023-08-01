@@ -1,8 +1,20 @@
 tags:
   - name: linux
+  - name: windows
+    variables:
+      MSVC_CFLAGS:
+        - -DEBUG:FULL
+        - -Z7
+        - -EHsc
+        - -WX
+        - -nologo
+      MSVC_LDFLAGS:
+        - -NOLOGO
+        - -WX
+
   - name: compiler
     variables:
-      CFLAGS:
+      GCC_CFLAGS:
         - -no-pie
     implies: [linux]
   - name: native
@@ -11,15 +23,15 @@ tags:
     implies: [compiler]
   - name: static
     variables:
-      CFLAGS:
+      GCC_CFLAGS:
         - -static
   - name: nostdlib
     variables:
-      CFLAGS:
+      GCC_CFLAGS:
         - -nostdlib
   - name: nostartfiles
     variables:
-      CFLAGS:
+      GCC_CFLAGS:
         - -nostartfiles
   - name: cross-compiler
     implies: [compiler]
@@ -28,8 +40,9 @@ tags:
     variables:
       TRIPLE: armv7a-hardfloat-linux-uclibceabi-
       QEMU_NAME: arm
-      CFLAGS:
+      GCC_CFLAGS:
         - -Wl,-Ttext-segment=0x20000
+      CFLAGS:
         - -DTARGET_arm
   - name: x86-64
     implies: [cross-compiler]
@@ -74,3 +87,4 @@ tags:
       QEMU_NAME: aarch64
       CFLAGS:
         - -DTARGET_aarch64
+  - name: has-special-compilation-requirements

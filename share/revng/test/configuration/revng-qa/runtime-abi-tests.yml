@@ -1,0 +1,145 @@
+tags:
+  - name: x86-64-systemv-abi
+    implies: [x86-64]
+    variables:
+      ABI_NAME: SystemV_x86_64
+      CFLAGS:
+        - -DABI_SystemV_x86_64
+
+  - name: x86-64-microsoft-abi
+    implies: [x86-64]
+    variables:
+      ABI_NAME: Microsoft_x86_64
+      CFLAGS:
+        - -DABI_Microsoft_x86_64
+      GCC_CFLAGS:
+        - -maccumulate-outgoing-args
+
+  - name: i386-systemv-abi
+    implies: [i386]
+    variables:
+      ABI_NAME: SystemV_x86
+      CFLAGS:
+        - -DABI_SystemV_x86
+
+  - name: i386-regparm-3-systemv-abi
+    implies: [i386]
+    variables:
+      ABI_NAME: SystemV_x86_regparm_3
+      CFLAGS:
+        - -DABI_SystemV_x86_regparm_3
+
+  - name: i386-regparm-2-systemv-abi
+    implies: [i386]
+    variables:
+      ABI_NAME: SystemV_x86_regparm_2
+      CFLAGS:
+        - -DABI_SystemV_x86_regparm_2
+
+  - name: i386-regparm-1-systemv-abi
+    implies: [i386]
+    variables:
+      ABI_NAME: SystemV_x86_regparm_1
+      CFLAGS:
+        - -DABI_SystemV_x86_regparm_1
+
+  - name: i386-cdecl-microsoft-abi
+    implies: [i386]
+    variables:
+      ABI_NAME: Microsoft_x86_cdecl
+      CFLAGS:
+        - -DABI_Microsoft_x86_cdecl
+
+  - name: i386-fastcall-microsoft-abi
+    implies: [i386]
+    variables:
+      ABI_NAME: Microsoft_x86_fastcall
+      CFLAGS:
+        - -DABI_Microsoft_x86_fastcall
+
+  - name: i386-stdcall-microsoft-abi
+    implies: [i386]
+    variables:
+      ABI_NAME: Microsoft_x86_stdcall
+      CFLAGS:
+        - -DABI_Microsoft_x86_stdcall
+
+  - name: aarch64-aapcs64-abi
+    implies: [aarch64]
+    variables:
+      ABI_NAME: AAPCS64
+      CFLAGS:
+        - -DABI_AAPCS64
+
+  - name: arm-aapcs-abi
+    implies: [arm]
+    variables:
+      ABI_NAME: AAPCS
+      CFLAGS:
+        - -DABI_AAPCS
+
+sources:
+  - tags: [abi-described-test-functions, linux, static]
+    repeat-for:
+      - [x86-64-systemv-abi]
+      - [x86-64-microsoft-abi]
+      - [i386-systemv-abi]
+      - [i386-regparm-3-systemv-abi]
+      - [i386-regparm-2-systemv-abi]
+      - [i386-regparm-1-systemv-abi]
+      - [i386-cdecl-microsoft-abi]
+      - [i386-fastcall-microsoft-abi]
+      - [i386-stdcall-microsoft-abi]
+      - [arm-aapcs-abi]
+    members:
+      - share/revng/test/tests/abi/setup.c
+
+  - tags: [abi-description-assembly, linux, static]
+    repeat-for:
+      - [x86-64-systemv-abi]
+      - [i386-systemv-abi]
+      - [i386-regparm-3-systemv-abi]
+      - [i386-regparm-2-systemv-abi]
+      - [i386-regparm-1-systemv-abi]
+      - [i386-cdecl-microsoft-abi]
+      - [i386-fastcall-microsoft-abi]
+      - [i386-stdcall-microsoft-abi]
+      - [arm-aapcs-abi]
+    members:
+      - share/revng/test/tests/abi/gcc_setup.S
+
+  - tags: [abi-description-assembly-msvc, windows]
+    repeat-for:
+      - [x86-64-microsoft-abi]
+    members:
+      - share/revng/test/tests/abi/msvc_setup.asm
+
+  - tags: [abi-test-function-printers, for-runtime, linux, static]
+    repeat-for:
+      - [x86-64, x86-64-systemv-abi]
+      - [x86-64, x86-64-microsoft-abi]
+      - [i386, i386-systemv-abi]
+      - [i386, i386-regparm-3-systemv-abi]
+      - [i386, i386-regparm-2-systemv-abi]
+      - [i386, i386-regparm-1-systemv-abi]
+      - [i386, i386-cdecl-microsoft-abi]
+      - [i386, i386-fastcall-microsoft-abi]
+      - [i386, i386-stdcall-microsoft-abi]
+      - [arm, arm-aapcs-abi]
+    members:
+      - share/revng/test/tests/abi/printers.c
+
+  - tags: [abi-test-function-prototypes]
+    repeat-for:
+      - [linux, x86-64-systemv-abi]
+      - [linux, i386-systemv-abi]
+      - [linux, i386-regparm-3-systemv-abi]
+      - [linux, i386-regparm-2-systemv-abi]
+      - [linux, i386-regparm-1-systemv-abi]
+      - [linux, i386-cdecl-microsoft-abi]
+      - [linux, i386-fastcall-microsoft-abi]
+      - [linux, i386-stdcall-microsoft-abi]
+      - [linux, arm-aapcs-abi]
+      - [windows, x86-64-microsoft-abi]
+    members:
+      - share/revng/test/tests/abi/functions.c

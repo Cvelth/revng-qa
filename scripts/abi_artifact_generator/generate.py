@@ -65,14 +65,27 @@ def render_helper(env, template_name: str, result_path: str, variable_dictionary
         file.write(jinja_template.render(variable_dictionary))
 
 
-def fill_a_register(architecture, location, offset, register):
+def intel_register_type(register_size: str):
+    if register_size == 1:
+        return "byte"
+    elif register_size == 2:
+        return "word"
+    elif register_size == 4:
+        return "dword"
+    elif register_size == 8:
+        return "qword"
+    else:
+        raise Exception("unsupported register size")
+
+
+def load_a_register(architecture, location, offset, register):
     local_dictionary = {
         "location": location,
         "offset": offset,
         "register": register,
     }
 
-    jinja_template = jinja2.Environment().from_string(architecture["templates"]["fill_a_register"])
+    jinja_template = jinja2.Environment().from_string(architecture["templates"]["load_a_register"])
     return jinja_template.render(local_dictionary)
 
 
@@ -82,7 +95,31 @@ def setup_registers(architecture):
     for index, register in enumerate(reversed(architecture["register_list"])):
         location = "randomized_state"
         offset = (register_count - index - 1) * architecture["register_size"]
-        current = fill_a_register(architecture, location, offset, register)
+        current = load_a_register(architecture, location, offset, register)
+        result = result + current + "\n"
+    return result
+
+
+def save_a_register(architecture, location, offset, register, scratch_register):
+    local_dictionary = {
+        "location": location,
+        "offset": offset,
+        "register": register,
+        "scratch_register": scratch_register,
+    }
+
+    jinja_template = jinja2.Environment().from_string(architecture["templates"]["save_a_register"])
+    return jinja_template.render(local_dictionary)
+
+
+def save_registers(architecture):
+    result = str("")
+    assert(len(architecture["register_list"]) > 1)
+    for index, register in enumerate(architecture["register_list"]):
+        location = "printable_data"
+        offset = index * architecture["register_size"]
+        scratch_register = architecture["register_list"][0] if index != 0 else architecture["register_list"][1]
+        current = save_a_register(architecture, location, offset, register, scratch_register)
         result = result + current + "\n"
     return result
 
@@ -95,9 +132,9 @@ def setup_stack(architecture, config):
     result = str("")
 
     # Some architectures only support pushing registers onto the stack in pairs.
-    # To work around that limitation, this introduces the `fill_two_registers`
+    # To work around that limitation, this introduces the `load_two_registers`
     # option for the templates to utilize: it lets two registers to be loaded
-    # at once, but has the limitation of feeling up twice the space - hence we
+    # at once, but has the limitation of using up twice the space - hence we
     # need to limit the pushes, which is what the `flip_flop` flag is for:
     # the registers are only pushed when it's set, which happens on every second
     # iteration.
@@ -106,7 +143,7 @@ def setup_stack(architecture, config):
         stack_helper_dictionary = {
             "register": architecture["register_list"][0],
             "second_register": architecture["register_list"][1],
-            "fill_a_register": fill_a_register(
+            "load_a_register": load_a_register(
                 architecture,
                 "randomized_state",
                 offset,
@@ -114,15 +151,15 @@ def setup_stack(architecture, config):
             ),
         }
         if flip_flop:
-            stack_helper_dictionary["fill_two_registers"] = (
-                fill_a_register(
+            stack_helper_dictionary["load_two_registers"] = (
+                load_a_register(
                     architecture,
                     "randomized_state",
                     offset,
                     architecture["register_list"][0],
                 )
                 + "\n"
-                + fill_a_register(
+                + load_a_register(
                     architecture,
                     "randomized_state",
                     offset - register_size,
@@ -130,7 +167,7 @@ def setup_stack(architecture, config):
                 )
             )
         else:
-            stack_helper_dictionary["fill_two_registers"] = ""
+            stack_helper_dictionary["load_two_registers"] = ""
         jinja_template = jinja2.Environment().from_string(
             architecture["templates"]["push_to_stack"]
         )
@@ -152,14 +189,27 @@ def restore_stack(architecture, config):
 
 
 def save_return_address(architecture):
-    return architecture["templates"]["save_return_address"]
+    local_dictionary = {
+        "location": "saved_return_address",
+        "register": architecture["register_list"][0],
+    }
+
+    jinja_template = jinja2.Environment().from_string(
+        architecture["templates"]["save_return_address"]
+    )
+    return jinja_template.render(local_dictionary)
 
 
 def restore_return_address(architecture, config):
+    local_dictionary = {
+        "location": "saved_return_address",
+        "register": architecture["register_list"][0],
+    }
+
     jinja_template = jinja2.Environment().from_string(
         architecture["templates"]["restore_return_address"]
     )
-    return jinja_template.render({"stack_size": config["stack_byte_count"]})
+    return jinja_template.render(local_dictionary)
 
 
 def return_from_function(architecture, config):
@@ -169,33 +219,48 @@ def return_from_function(architecture, config):
     return jinja_template.render()
 
 
-def return_from_function_with_cleanup(architecture, config):
+def shift_last_stack_word(architecture, config):
     jinja_template = jinja2.Environment().from_string(
-        architecture["templates"]["return_from_function_with_cleanup"]
+        architecture["templates"]["shift_last_stack_word"]
     )
-    return jinja_template.render()
+    return jinja_template.render({"register": architecture["register_list"][0]})
 
 
 def asm(input: str):
-    return '"' + '\\n"\n      "'.join(input.splitlines()) + '\\n"'
+    return "\n  ".join(input.splitlines())
 
 
 def get_generation_notice():
-    return """/*
- * This file was autogenerated. DO NOT MODIFY!
- * It is distributed under the MIT License. See LICENSE.md for details.
- */"""
+    return """;; /*
+;; * This file was autogenerated. DO NOT MODIFY!
+;; * It is distributed under the MIT License. See LICENSE.md for details.
+;; */"""
 
 
 def render_functions(jinja_environment, config, out_dir: str):
     dictionary = {
         "generation_notice": get_generation_notice(),
-        "structs": config["helper_structs"],
+        "structs": config["structs"],
+        "packed_structs": config["packed_structs"],
         "argument_functions": config["argument_tests"],
         "return_value_functions": config["return_value_tests"],
+        "supported_primitives": [
+            "int8_t",
+            "int16_t",
+            "int32_t",
+            "int64_t",
+            "uint8_t",
+            "uint16_t",
+            "uint32_t",
+            "uint64_t",
+        ],
     }
 
     filename = "functions.h"
+    result_path = out_dir + "/" + filename
+    render_helper(jinja_environment, filename, result_path, dictionary)
+
+    filename = "types.h"
     result_path = out_dir + "/" + filename
     render_helper(jinja_environment, filename, result_path, dictionary)
 
@@ -213,6 +278,7 @@ def render_function_description(jinja_env, architectures, config, functions, out
             "lfsr_seed": config["lfsr_seed"],
             "iteration_count": config["iteration_count"],
             "register_type": architecture["register_type"],
+            "intel_register_type": intel_register_type(architecture["register_size"]),
             "register_size": architecture["register_size"],
             "register_list": architecture["register_list"],
             "register_count": len(architecture["register_list"]),
@@ -220,22 +286,34 @@ def render_function_description(jinja_env, architectures, config, functions, out
             "return_value_functions": functions["return_value_tests"],
             "fill_stack_with_random_data": asm(setup_stack(architecture, config)),
             "fill_registers_with_random_data": asm(setup_registers(architecture)),
+            "save_registers": asm(save_registers(architecture)),
             "call_a_function": lambda n, a=architecture: asm(call_a_function(a, n)),
             "restore_stack": asm(restore_stack(architecture, config)),
             "save_return_address": asm(save_return_address(architecture)),
             "restore_return_address": asm(restore_return_address(architecture, config)),
             "return_from_function": asm(return_from_function(architecture, config)),
-            "return_from_function_with_cleanup": asm(
-                return_from_function_with_cleanup(architecture, config)
-            ),
+            "enumerate": enumerate,
         }
 
         combined = dictionary["register_count"] * dictionary["register_size"]
         dictionary["generated_byte_count"] = dictionary["stack_byte_count"] + combined
+        assert dictionary["generated_byte_count"] % dictionary["register_size"] == 0
 
-        filename = "describe_functions.inc"
+        filename = "setup.inc"
         path = out_dir + "/" + architecture_name + "/" + filename
         render_helper(jinja_env, filename, path, dictionary)
+
+        filename = "printers.inc"
+        path = out_dir + "/" + architecture_name + "/" + filename
+        render_helper(jinja_env, filename, path, dictionary)
+
+        for current_style in architecture["styles"]:
+            style_specific_dictionary = dictionary
+            style_specific_dictionary["current_style"] = current_style
+
+            filename = "setup.S"
+            path = out_dir + "/" + architecture_name + "/" + current_style + "_" + filename
+            render_helper(jinja_env, filename, path, style_specific_dictionary)
 
 
 def main():

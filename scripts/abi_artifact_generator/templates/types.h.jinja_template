@@ -1,0 +1,81 @@
+#pragma once
+/*( _ )*/
+
+/*#-
+This template file is distributed under the MIT License. See LICENSE.md for details.
+#*/
+
+/*(- generation_notice )*/
+
+#ifdef __SIZEOF_INT128__
+#define INT128_IS_SCALAR 1
+#else
+#define INT128_IS_SCALAR 0
+#endif
+
+#ifndef __STDC_VERSION__
+// This is an ugly hack required because our msvc version is really old.
+// Once we have real c11 support (19.28 or newer), this should be removed.
+#define STR(x) #x
+#define IS_SCALAR(TYPE, VALUE) (\
+  /*{- for type in supported_primitives }*/
+  STR(TYPE) == "/*( type )*/" || \
+  STR(TYPE) == "/*( type )*/ *" || \
+  /*{- endfor }*/
+  /*{- for name, fields in structs.items() }*/
+  STR(TYPE) == "/*( name )*/ *" || \
+  /*{- endfor }*/
+  /*{- for name, fields in packed_structs.items() }*/
+  STR(TYPE) == "/*( name )*/ *" || \
+  /*{- endfor }*/
+  STR(TYPE) == "INT128_T *" || \
+  STR(TYPE) == "UINT128_T *" || \
+  STR(TYPE) == "void *" \
+  \
+  ? 1 : ( \
+  /*{- for name, fields in structs.items() }*/
+  STR(TYPE) == "/*( name )*/" || \
+  /*{- endfor }*/
+  /*{- for name, fields in packed_structs.items() }*/
+  STR(TYPE) == "/*( name )*/" || \
+  /*{- endfor }*/
+  \
+  0 ? 0 : ( \
+  STR(TYPE) == "INT128_T" || \
+  STR(TYPE) == "UINT128_T" ? INT128_IS_SCALAR : \
+  (exit(1), 0) /* unknown type */)))
+
+#define IS_PACKED(TYPE) (\
+  /*{- for name, fields in packed_structs.items() }*/
+  STR(TYPE) == "/*( name )*/" || \
+  /*{- endfor }*/
+  0 ? 1 : 0)
+#else
+#define IS_SCALAR(TYPE, VALUE) \
+  _Generic((VALUE), \
+    /*{- for type in supported_primitives }*/
+           /*( type )*/: 1, \
+           /*( type )*/ *: 1, \
+    /*{- endfor }*/
+    /*{- for name, fields in structs.items() }*/
+           /*( name )*/: 0, \
+           /*( name )*/ *: 1, \
+    /*{- endfor }*/
+    /*{- for name, fields in packed_structs.items() }*/
+           /*( name )*/: 0, \
+           /*( name )*/ *: 1, \
+    /*{- endfor }*/
+           INT128_T: INT128_IS_SCALAR, \
+           INT128_T *: 1, \
+           UINT128_T: INT128_IS_SCALAR, \
+           UINT128_T *: 1, \
+           void *: 1)
+
+#define IS_PACKED(TYPE) (_Alignof(TYPE) == 1 && sizeof(TYPE) != 1)
+#endif
+
+#define ARGUMENT_SIZE_LIMIT(TYPE, VALUE) \
+  (sizeof(void *) * (IS_SCALAR(TYPE, VALUE) ? MaximumGPRsPerScalarArgument : MaximumGPRsPerAggregateArgument))
+#define RETURN_VALUE_SIZE_LIMIT(TYPE, VALUE) \
+  (sizeof(void *) * (IS_SCALAR(TYPE, VALUE) ? MaximumGPRsPerScalarReturnValue : MaximumGPRsPerAggregateReturnValue))
+

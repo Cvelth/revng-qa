@@ -1,12 +1,13 @@
 tags:
   - name: stripped
   - name: with-debug-info
+
 commands:
   - type: revng-qa.compiled-with-debug-info
     from:
       - type: source
-        filter: linux
-    command: ${TRIPLE}gcc $INPUT -o $OUTPUT $CFLAGS
+        filter: linux and !has-special-compilation-requirements
+    command: ${TRIPLE}gcc $INPUT -o $OUTPUT $CFLAGS $GCC_CFLAGS
   - type: revng-qa.compiled-stripped
     from:
       - type: revng-qa.compiled-with-debug-info
@@ -21,6 +22,23 @@ commands:
     from:
       - type: revng-qa.compiled-stripped
     command: cp $INPUT $OUTPUT
+
+  - type: revng-qa.compiled
+    from:
+      - type: source
+        filter: windows and x86-64 and !has-special-compilation-requirements
+    pool: wine
+    command: |-
+      timeout 30 x86_64-winsdk-vc16-cl z:\$INPUT -Fe$OUTPUT $CFLAGS $MSVC_CFLAGS -link $MSVC_LDFLAGS
+  - type: revng-qa.generated-pdb
+    from:
+      - type: source
+        filter: windows and x86-64 and !has-special-compilation-requirements
+    suffix: .pdb
+    pool: wine
+    command: |-
+      timeout 30 x86_64-winsdk-vc16-cl z:\$INPUT $CFLAGS $MSVC_CFLAGS -link $MSVC_LDFLAGS -pdb:$OUTPUT
+
   - type: revng-qa.disassembled
     from:
       - type: revng-qa.compiled
