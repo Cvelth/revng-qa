@@ -51,14 +51,14 @@ tags:
         - -DABI_Microsoft_x86_cdecl
 
   - name: i386-fastcall-microsoft-abi
-    implies: [i386]
+    implies: [i386, has-special-linkage-requirements]
     variables:
       ABI_NAME: Microsoft_x86_fastcall
       CFLAGS:
         - -DABI_Microsoft_x86_fastcall
 
   - name: i386-stdcall-microsoft-abi
-    implies: [i386]
+    implies: [i386, has-special-linkage-requirements]
     variables:
       ABI_NAME: Microsoft_x86_stdcall
       CFLAGS:
@@ -79,22 +79,26 @@ tags:
         - -DABI_AAPCS
 
 sources:
-  - tags: [abi-described-test-functions, linux, static]
+  - tags: [abi-test-function-description]
     repeat-for:
-      - [x86-64-systemv-abi]
-      - [x86-64-microsoft-abi]
-      - [i386-systemv-abi]
-      - [i386-regparm-3-systemv-abi]
-      - [i386-regparm-2-systemv-abi]
-      - [i386-regparm-1-systemv-abi]
-      - [i386-cdecl-microsoft-abi]
-      - [i386-fastcall-microsoft-abi]
-      - [i386-stdcall-microsoft-abi]
-      - [arm-aapcs-abi]
+      - [linux, static, x86-64-systemv-abi]
+      - [linux, static, i386-systemv-abi]
+      - [linux, static, i386-regparm-3-systemv-abi]
+      - [linux, static, i386-regparm-2-systemv-abi]
+      - [linux, static, i386-regparm-1-systemv-abi]
+      - [linux, static, i386-cdecl-microsoft-abi]
+      - [linux, static, i386-fastcall-microsoft-abi]
+      - [linux, static, i386-stdcall-microsoft-abi]
+      #- [linux, static, aarch64-aapcs64-abi]
+      - [linux, static, arm-aapcs-abi]
+      - [windows, x86-64-microsoft-abi]
+      - [windows, i386-cdecl-microsoft-abi]
+      - [windows, i386-fastcall-microsoft-abi]
+      - [windows, i386-stdcall-microsoft-abi]
     members:
       - share/revng/test/tests/abi/setup.c
 
-  - tags: [abi-description-assembly, linux, static]
+  - tags: [abi-assembly-description, linux, static]
     repeat-for:
       - [x86-64-systemv-abi]
       - [i386-systemv-abi]
@@ -104,28 +108,42 @@ sources:
       - [i386-cdecl-microsoft-abi]
       - [i386-fastcall-microsoft-abi]
       - [i386-stdcall-microsoft-abi]
+      #- [aarch64-aapcs64-abi]
       - [arm-aapcs-abi]
+      - [has-special-combination-requirements, x86-64-microsoft-abi]
+      - [has-special-combination-requirements, i386-cdecl-microsoft-abi]
+      - [has-special-combination-requirements, i386-fastcall-microsoft-abi]
+      - [has-special-combination-requirements, i386-stdcall-microsoft-abi]
     members:
       - share/revng/test/tests/abi/gcc_setup.S
 
-  - tags: [abi-description-assembly-msvc, windows]
+  - tags: [abi-assembly-description, windows]
     repeat-for:
       - [x86-64-microsoft-abi]
+      - [i386-cdecl-microsoft-abi]
+      - [i386-fastcall-microsoft-abi]
+      - [i386-stdcall-microsoft-abi]
     members:
-      - share/revng/test/tests/abi/msvc_setup.asm
+      - share/revng/test/tests/abi/msvc_setup.S
 
-  - tags: [abi-test-function-printers, for-runtime, linux, static]
+  - tags: [abi-test-function-printers]
     repeat-for:
-      - [x86-64, x86-64-systemv-abi]
-      - [x86-64, x86-64-microsoft-abi]
-      - [i386, i386-systemv-abi]
-      - [i386, i386-regparm-3-systemv-abi]
-      - [i386, i386-regparm-2-systemv-abi]
-      - [i386, i386-regparm-1-systemv-abi]
-      - [i386, i386-cdecl-microsoft-abi]
-      - [i386, i386-fastcall-microsoft-abi]
-      - [i386, i386-stdcall-microsoft-abi]
-      - [arm, arm-aapcs-abi]
+      - [for-runtime, linux, static, x86-64-systemv-abi]
+      - [for-runtime, linux, static, i386-systemv-abi]
+      - [for-runtime, linux, static, i386-regparm-3-systemv-abi]
+      - [for-runtime, linux, static, i386-regparm-2-systemv-abi]
+      - [for-runtime, linux, static, i386-regparm-1-systemv-abi]
+      - [for-runtime, linux, static, i386-cdecl-microsoft-abi]
+      - [for-runtime, linux, static, i386-fastcall-microsoft-abi]
+      - [for-runtime, linux, static, i386-stdcall-microsoft-abi]
+      #- [for-runtime, linux, static, aarch64-aapcs64-abi]
+      - [for-runtime, linux, static, arm-aapcs-abi]
+      - [for-runtime, has-special-combination-requirements, linux, static, x86-64-microsoft-abi]
+      - [for-runtime, has-special-combination-requirements, linux, static, i386-cdecl-microsoft-abi]
+      - [for-runtime, has-special-combination-requirements, linux, static, i386-fastcall-microsoft-abi]
+      - [for-runtime, has-special-combination-requirements, linux, static, i386-stdcall-microsoft-abi]
+      - [windows, x86-64-microsoft-abi]
+      - [windows, i386-cdecl-microsoft-abi]
     members:
       - share/revng/test/tests/abi/printers.c
 
@@ -139,7 +157,11 @@ sources:
       - [linux, i386-cdecl-microsoft-abi]
       - [linux, i386-fastcall-microsoft-abi]
       - [linux, i386-stdcall-microsoft-abi]
+      #- [linux, aarch64-aapcs64-abi]
       - [linux, arm-aapcs-abi]
       - [windows, x86-64-microsoft-abi]
+      - [windows, i386-cdecl-microsoft-abi]
+      - [windows, i386-fastcall-microsoft-abi]
+      - [windows, i386-stdcall-microsoft-abi]
     members:
       - share/revng/test/tests/abi/functions.c

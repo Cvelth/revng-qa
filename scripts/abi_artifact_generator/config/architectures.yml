@@ -3,6 +3,7 @@
   register_type: uint64_t
   register_size: 8
   register_list: [rax, rbx, rcx, rdx, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15]
+  stack_pointer: rsp
   styles: [gcc, msvc]
   templates:
     call_a_function: |
@@ -15,7 +16,12 @@
       mov qword ptr [{{ location }} + {{ offset }}], {{ register }}
     push_to_stack: |
       {{ load_a_register }}
-      push {{register}}
+      push {{ register }}
+    save_a_stack_word: |
+      push {{ register }}
+      mov {{ register }}, qword ptr [rsp + {{ stack_offset }}]
+      {{ save_a_register }}
+      pop {{ register }}
     restore_stack: |
       add rsp, {{ stack_size }}
     save_return_address: |
@@ -30,6 +36,7 @@
   register_size: 4
   register_list: [eax, ebx, ecx, edx, esi, edi]
   styles: [gcc, msvc]
+  stack_pointer: esp
   templates:
     call_a_function: |
       call {{ function_name }}
@@ -41,7 +48,12 @@
       mov dword ptr [{{ location }} + {{ offset }}], {{ register }}
     push_to_stack: |
       {{ load_a_register }}
-      push {{register}}
+      push {{ register }}
+    save_a_stack_word: |
+      push {{ register }}
+      mov {{ register }}, dword ptr [esp + {{ stack_offset }}]
+      {{ save_a_register }}
+      pop {{ register }}
     restore_stack: |
       add esp, {{ stack_size }}
     save_return_address: |
@@ -55,6 +67,7 @@
   register_type: uint64_t
   register_size: 8
   register_list: [x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29]
+  stack_pointer: sp
   styles: [gcc]
   templates:
     call_a_function: |
@@ -62,7 +75,7 @@
     return_from_function: |
       ret
     load_a_register: |
-      adrp {{ register }}, {{location}}
+      adrp {{ register }}, {{ location }}
       add {{ register }}, {{ register }}, #:lo12:{{ location }}
       ldr {{ register }}, [{{ register }}, #{{ offset }}]
     save_a_register: |
@@ -72,18 +85,25 @@
       add {{ scratch_register }}, {{ scratch_register }}, #:lo12:{{ location }}
       str {{ register }}, [{{ scratch_register }}, #{{ offset }}]
       ldr {{ scratch_register }}, [sp]
-      add sp, sp #16
+      add sp, sp, #16
     push_to_stack: |
       {{ load_two_registers }}
       stp {{ register }}, {{ second_register }}, [sp, #-16]!
+    save_a_stack_word: |
+      sub sp, sp, #16
+      str {{ register }}, [sp]
+      ldr {{ register }}, [sp, #{{ stack_offset }}]
+      {{ save_a_register }}
+      ldr {{ register }}, [sp]
+      add sp, sp, #16
     restore_stack: |
-      add sp, sp,  #{{ stack_size }}
+      add sp, sp, #{{ stack_size }}
     save_return_address: |
-      adrp {{ register }}, {{location}}
+      adrp {{ register }}, {{ location }}
       add {{ register }}, {{ register }}, #:lo12:{{ location }}
       str lr, [{{ register }}]
     restore_return_address: |
-      adrp {{ register }}, {{location}}
+      adrp {{ register }}, {{ location }}
       add {{ register }}, {{ register }}, #:lo12:{{ location }}
       ldr lr, [{{ register }}]
 
@@ -91,6 +111,7 @@
   register_type: uint32_t
   register_size: 4
   register_list: [r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12]
+  stack_pointer: sp
   styles: [gcc]
   templates:
     call_a_function: |
@@ -110,6 +131,11 @@
     push_to_stack: |
       {{ load_a_register }}
       push {{ "{ " + register + " }" }}
+    save_a_stack_word: |
+      push { {{ register }} }
+      ldr {{ register }}, [sp, #{{ stack_offset }}]
+      {{ save_a_register }}
+      pop { {{ register }} }
     restore_stack: |
       add sp, sp, #{{ stack_size }}
     save_return_address: |

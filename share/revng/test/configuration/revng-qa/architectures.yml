@@ -1,29 +1,31 @@
 tags:
   - name: linux
   - name: windows
+  - name: compiler
+    variables:
+      GCC_CFLAGS:
+        - -no-pie
     variables:
       MSVC_CFLAGS:
-        - -DEBUG:FULL
         - -Z7
         - -EHsc
         - -WX
         - -nologo
       MSVC_LDFLAGS:
+        - -DEBUG:FULL
         - -NOLOGO
         - -WX
-
-  - name: compiler
-    variables:
-      GCC_CFLAGS:
-        - -no-pie
-    implies: [linux]
   - name: native
     implies: [compiler]
   - name: dynamic
     implies: [compiler]
+    variables:
+      GCC_CFLAGS:
+        - -fpic
   - name: static
     variables:
       GCC_CFLAGS:
+        - -fno-pic
         - -static
   - name: nostdlib
     variables:

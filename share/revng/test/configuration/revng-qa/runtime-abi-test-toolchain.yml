@@ -1,29 +1,31 @@
 tags:
-  - name: abi-test-internals
+  - name: has-special-linkage-requirements
+  - name: has-special-combination-requirements
+
+  - name: abi-test-sources
+
+  - name: abi-test-asm-sources
+    implies: [abi-test-sources]
+  - name: abi-test-c-sources
+    implies: [abi-test-sources]
+    variables:
+      GCC_CFLAGS:
+        - -std=c99
+        - -fno-pic
+        - -fno-pie
+        - -fno-stack-protector
+        - -O1
+      MSVC_CFLAGS:
+        - -std:c11
+        - -O1
+        - -GS-
+
+  - name: abi-test-function-description
+    implies: [abi-test-c-sources, has-special-compilation-requirements]
+  - name: abi-assembly-description
+    implies: [abi-test-asm-sources, has-special-compilation-requirements]
   - name: abi-test-function-printers
-    implies: [abi-test-internals, has-special-compilation-requirements]
-    variables:
-      GCC_CFLAGS:
-        - -std=c99
-        - -fno-pic
-        - -fno-pie
-        - -fno-stack-protector
-        - -O1
-
-  - name: abi-described-test-functions
-    implies: [abi-test-internals, has-special-compilation-requirements]
-    variables:
-      GCC_CFLAGS:
-        - -std=c99
-        - -fno-pic
-        - -fno-pie
-        - -fno-stack-protector
-        - -O1
-
-  - name: abi-description-assembly
-    implies: [abi-test-internals, has-special-compilation-requirements]
-  - name: abi-description-assembly-msvc
-    implies: [has-special-compilation-requirements]
+    implies: [abi-test-c-sources, has-special-compilation-requirements]
 
   - name: abi-test-function-prototypes
     variables:
@@ -34,30 +36,108 @@ tags:
         - -fno-stack-protector
         - -ggdb3
         - -O3
+      MSVC_CFLAGS:
+        - -std:c11
+        - -O2
 
 commands:
   - type: revng-qa.compiled-to-object-file
     from:
       - type: source
-        filter: abi-test-internals
+        filter: abi-test-sources and linux
     suffix: .o
     command: ${TRIPLE}gcc $INPUT -o ${OUTPUT} $CFLAGS $GCC_CFLAGS -c
 
   - type: revng-qa.compiled-to-object-file
     from:
       - type: source
-        filter: abi-description-assembly-msvc
+        filter: abi-test-asm-sources and windows
     suffix: .obj
     pool: wine
     command: |-
-      timeout 30 x86_64-winsdk-vc16-ml -nologo $CFLAGS -I$$(dirname $INPUT) z:\$INPUT -Fo$OUTPUT -c
+      timeout 30 ${QEMU_NAME}-winsdk-vc19-ml -nologo $CFLAGS -I$$(dirname $INPUT) -Fo$OUTPUT -c z:\$INPUT
+
+  - type: revng-qa.compiled-to-object-file
+    from:
+      - type: source
+        filter: abi-test-c-sources and windows
+    suffix: .obj
+    pool: wine
+    command: |-
+      timeout 30 ${QEMU_NAME}-winsdk-vc19-cl -nologo $CFLAGS $MSVC_CFLAGS -Fo$OUTPUT -c z:\$INPUT
+
+  - type: revng-qa.compiled
+    from:
+      - type: revng-qa.compiled-to-object-file
+        filter: abi-test-function-printers and windows and !has-special-linkage-requirements
+      - type: revng-qa.compiled-to-object-file
+        filter: abi-test-function-description and windows and !has-special-linkage-requirements
+      - type: revng-qa.compiled-to-object-file
+        filter: abi-assembly-description and windows and !has-special-linkage-requirements
+    suffix: .exe
+    pool: wine
+    command: |-
+      timeout 30 ${QEMU_NAME}-winsdk-vc19-cl -nologo z:\$INPUT1 z:\$INPUT2 z:\$INPUT3 -Fe$OUTPUT $CFLAGS $MSVC_CFLAGS -link $MSVC_LDFLAGS
+
+  - type: revng-qa.abi-test-function-description-disassembled
+    from:
+      - type: revng-qa.compiled-to-object-file
+        filter: abi-test-function-description and windows
+    suffix: .asm
+    pool: wine
+    command: |-
+      timeout 30 ${QEMU_NAME}-winsdk-vc19-dumpbin -nologo -disasm:nobytes -rawdata:none -out:z:\$OUTPUT z:\$INPUT
+
+  - type: revng-qa.abi-test-function-description-edited
+    from:
+      - type: revng-qa.abi-test-function-description-disassembled
+    suffix: .S
+    command: |-
+      cp $INPUT $OUTPUT;
+
+      perl -0777 -pi -e "s/^/.intel_syntax noprefix/" $OUTPUT;
+      perl -0777 -pi -e "s/Dump of file/\/\/ Dump of file/" $OUTPUT;
+      perl -0777 -pi -e "s/File Type/\/\/ File Type/" $OUTPUT;
+      perl -0777 -pi -e "s/  Summary/\/\* Summary/" $OUTPUT;
+      echo "*/" >> $OUTPUT;
+
+      if [[ $TRIPLE == "i386-"* ]]; then
+        perl -pi -e "s/(?:\@|_)([^\@]+)@\d+/_\1/" $OUTPUT;
+        perl -pi -e "s/^  [0-9A-F]{8}: /  /" $OUTPUT;
+        perl -pi -e "s/(?<!\w)_([A-Za-z0-9_]+)/\1/" $OUTPUT;
+        perl -pi -e "s/^.LN\d+://m" $OUTPUT;
+        perl -pi -e "s/_setjmp3/_setjmp/" $OUTPUT;
+      else
+        perl -pi -e "s/^  [0-9A-F]{16}: /  /" $OUTPUT;
+      fi;
+
+      perl -pi -e "s/^([A-Za-z][A-Za-z0-9_]+):/.global \1\n\1:/" $OUTPUT;
+      perl -pi -e "s/([0-9A-F]+)h/0x\1/" $OUTPUT;
+      perl -pi -e "s/^(\s{2}j[a-z]*\s+) ([0-9A-F]+)/\1 0x\2/" $OUTPUT;
+
+  - type: revng-qa.recompiled-to-object-file
+    from:
+      - type: revng-qa.abi-test-function-description-edited
+    suffix: .o
+    command: ${TRIPLE}gcc $INPUT -o ${OUTPUT} $CFLAGS $GCC_CFLAGS -c
+
+  - type: revng-qa.compiled-with-debug-info
+    from:
+      - type: revng-qa.compiled-to-object-file
+        filter: abi-test-function-printers and linux and !has-special-combination-requirements
+      - type: revng-qa.compiled-to-object-file
+        filter: abi-test-function-description and linux and !has-special-combination-requirements
+      - type: revng-qa.compiled-to-object-file
+        filter: abi-assembly-description and linux and !has-special-combination-requirements
+    command: ${TRIPLE}gcc $INPUT1 $INPUT2 $INPUT3 -o ${OUTPUT} $CFLAGS $GCC_CFLAGS
 
 #   - type: revng-qa.compiled-with-debug-info
 #     from:
 #       - type: revng-qa.compiled-to-object-file
-#         filter: abi-described-test-functions
+#         filter: abi-test-function-printers and linux and has-special-combination-requirements
+#       - type: revng-qa.recompiled-to-object-file
+#         filter: abi-test-function-description and windows
 #       - type: revng-qa.compiled-to-object-file
-#         filter: abi-test-function-printers
-#       - type: revng-qa.compiled-to-object-file
-#         filter: abi-description-assembly
+#         filter: abi-assembly-description and linux and has-special-combination-requirements
 #     command: ${TRIPLE}gcc $INPUT1 $INPUT2 $INPUT3 -o ${OUTPUT} $CFLAGS $GCC_CFLAGS
+

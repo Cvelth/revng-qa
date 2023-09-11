@@ -4,18 +4,8 @@
 
 /* RUN-default: nope */
 
-#include "common.h"
 #include "functions.h"
 
-#ifdef _MSC_VER
-# ifdef TARGET_x86_64
-#  include "msvc_x86_64/printers.inc"
-# elif TARGET_i386
-#  include "msvc_i386/printers.inc"
-# else
-#  error "Impossible to find sources because the target architecture is unknown."
-# endif
-#else
 # ifdef TARGET_x86_64
 #  include "x86_64/printers.inc"
 # elif TARGET_i386
@@ -27,4 +17,3 @@
 # else
 #  error "Impossible to find sources because the target architecture is unknown."
 # endif
-#endif

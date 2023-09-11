@@ -26,18 +26,18 @@ commands:
   - type: revng-qa.compiled
     from:
       - type: source
-        filter: windows and x86-64 and !has-special-compilation-requirements
+        filter: windows and !has-special-compilation-requirements
     pool: wine
     command: |-
-      timeout 30 x86_64-winsdk-vc16-cl z:\$INPUT -Fe$OUTPUT $CFLAGS $MSVC_CFLAGS -link $MSVC_LDFLAGS
+      timeout 30 ${QEMU_NAME}-winsdk-vc19-cl z:\$INPUT -Fe$OUTPUT $CFLAGS $MSVC_CFLAGS -link $MSVC_LDFLAGS
   - type: revng-qa.generated-pdb
     from:
       - type: source
-        filter: windows and x86-64 and !has-special-compilation-requirements
+        filter: windows and !has-special-compilation-requirements
     suffix: .pdb
     pool: wine
     command: |-
-      timeout 30 x86_64-winsdk-vc16-cl z:\$INPUT $CFLAGS $MSVC_CFLAGS -link $MSVC_LDFLAGS -pdb:$OUTPUT
+      timeout 30 ${QEMU_NAME}-winsdk-vc19-cl z:\$INPUT $CFLAGS $MSVC_CFLAGS -link $MSVC_LDFLAGS -pdb:$OUTPUT
 
   - type: revng-qa.disassembled
     from:
@@ -45,3 +45,10 @@ commands:
         filter: linux
     suffix: .S
     command: ${TRIPLE}objdump $OBJDUMP_FLAGS -d $INPUT > $OUTPUT
+
+  - type: revng-qa.disassembled
+    from:
+      - type: revng-qa.compiled
+        filter: windows
+    suffix: .asm
+    command: ${QEMU_NAME}-winsdk-vc19-dumpbin -nologo -disasm -out:z:\$OUTPUT z:\$INPUT

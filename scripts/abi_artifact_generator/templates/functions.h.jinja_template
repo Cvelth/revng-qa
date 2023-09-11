@@ -10,12 +10,7 @@ This template file is distributed under the MIT License. See LICENSE.md for deta
 #include <stddef.h>
 #include <stdint.h>
 
-/*
- * Define an empty `ABIDEF` if it's undefined
- */
-#ifndef ABIDEF
-#define ABIDEF
-#endif
+#include "abi.h"
 
 /*
  * Define a `NOINLINE` specifier
@@ -57,6 +52,10 @@ typedef struct {
 
 /*{ endfor -}*/
 
+// There's a slight difference in the way this pragma impacts the structs
+// between msvc and gcc, but it shouldn't be relevant in our case: since all
+// we care about is that these structs are emitted as "unnaturally aligned",
+// without any regard to their specific size.
 #pragma pack(push, 1)
 
 /*{ for name, fields in packed_structs.items() -}*/
@@ -74,7 +73,7 @@ typedef struct {
  */
 
 /*{ for name, arguments in argument_functions.items() -}*/
-NOINLINE void setup_/*( name )*/(void);
+void setup_/*( name )*/(void);
 NOINLINE void ABIDEF test_/*( name )*/(
   /*{- for type in arguments -}*/
   /*( type )*/ argument_/*( loop.index - 1 )*/
@@ -86,9 +85,7 @@ NOINLINE void ABIDEF test_/*( name )*/(
  * Functions designed to test value returning
  */
 
-void * ABIDEF set_return_value_up(void);
-void ABIDEF restore_stack_pointer(void);
 /*{ for name, return_value_type in return_value_functions.items() -}*/
-NOINLINE void setup_/*( name )*/_location(void);
+void setup_/*( name )*/(void);
 NOINLINE /*( return_value_type )*/ ABIDEF test_/*( name )*/(void);
 /*{ endfor }*/

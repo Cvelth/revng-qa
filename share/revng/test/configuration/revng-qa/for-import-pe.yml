@@ -2,10 +2,13 @@
 # This file is distributed under the MIT License. See LICENSE.md for details.
 #
 
+tags:
+  - name: for-import-pe
 sources:
-  - tags: [windows]
+  - tags: [for-import-pe]
     repeat-for:
-      - [ x86-64 ]
+      - [x86-64, windows]
+      - [i386, windows]
     prefix: share/revng/test/tests/model/import/pe
     members:
       - main.c

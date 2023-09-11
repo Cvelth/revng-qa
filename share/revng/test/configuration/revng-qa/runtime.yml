@@ -5,21 +5,19 @@ tags:
     variables:
       GCC_CFLAGS:
         - -std=c99
-        - -fno-pic
-        - -fno-pie
         - -ggdb3
         - -fno-stack-protector
 sources:
   - tags: [for-runtime, for-comparison]
     repeat-for:
-      - [arm, static]
-      - [mips, static]
-      - [mipsel, static]
-      # - [aarch64, static]
-      - [x86-64, static]
-      - [s390x, static]
-      - [native, dynamic]
-      - [i386, static]
+      - [arm, static, linux]
+      - [mips, static, linux]
+      - [mipsel, static, linux]
+      # - [aarch64, static, linux]
+      - [x86-64, static, linux]
+      - [s390x, static, linux]
+      - [native, dynamic, linux]
+      - [i386, static, linux]
     prefix: share/revng/test/tests/runtime
     members:
       - function-call.c
@@ -29,7 +27,7 @@ sources:
       - printf.c
   - tags: []
     repeat-for:
-      - [aarch64, static]
+      - [aarch64, static, linux]
     prefix: share/revng/test/tests/runtime
     members:
       - function-call.c
@@ -39,18 +37,18 @@ sources:
       - printf.c
   - tags: [for-runtime, for-comparison, one-per-architecture]
     repeat-for:
-      - [arm, static]
-      - [mips, static]
-      - [mipsel, static]
-      # - [aarch64, static]
-      - [x86-64, static]
-      - [s390x, static]
-      - [native, dynamic]
-      - [i386, static]
+      - [arm, static, linux]
+      - [mips, static, linux]
+      - [mipsel, static, linux]
+      # - [aarch64, static, linux]
+      - [x86-64, static, linux]
+      - [s390x, static, linux]
+      - [native, dynamic, linux]
+      - [i386, static, linux]
     members:
       - share/revng/test/tests/runtime/calc.c
   - tags: [one-per-architecture]
     repeat-for:
-      - [aarch64, static]
+      - [aarch64, static, linux]
     members:
       - share/revng/test/tests/runtime/calc.c

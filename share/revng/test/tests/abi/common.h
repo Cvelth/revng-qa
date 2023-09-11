@@ -59,5 +59,17 @@
 
 #endif
 
-extern void *printable_location;
+// See `common.inc` template for explanation of these.
+
+typedef union {
+  uint8_t *bytes;
+  uint64_t *words;
+} location_pointer;
+
+extern location_pointer randomized_state;
+extern location_pointer printable_locations[3];
+
 extern ptrdiff_t current_offset;
+extern jmp_buf jump_buffer;
+
+extern uint64_t lfsr;

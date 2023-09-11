@@ -7,13 +7,13 @@ tags:
 sources:
   - tags: [well-known, nostdlib]
     repeat-for:
-      - [arm, static]
-      - [mips, static]
-      - [mipsel, static]
-      - [aarch64, static]
-      - [x86-64, static]
-      - [s390x, static]
-      - [i386, static]
+      - [arm, static, linux]
+      - [mips, static, linux]
+      - [mipsel, static, linux]
+      - [aarch64, static, linux]
+      - [x86-64, static, linux]
+      - [s390x, static, linux]
+      - [i386, static, linux]
     prefix: share/revng/test/tests/well-known-models
     members:
       - libc.c

@@ -1,0 +1,40 @@
+/*#-
+This template file is distributed under the MIT License. See LICENSE.md for details.
+#*/
+
+/*(- generation_notice )*/
+
+#include "../common.h"
+
+// The state of the in-built random number generator.
+uint64_t lfsr = /*( lfsr_seed )*/;
+
+// A place to safely store tested function return addresses, so they can be
+// recovered no matter how much stack and registers are modified.
+void *saved_return_address;
+void *saved_register_value;
+
+// The buffer shared between all the `setjmp-longjmp` pairs across the entirety
+// of the testing suite.
+jmp_buf jump_buffer;
+
+// A temporary location to store the last generated random state.
+uint8_t randomized_state_data[/*( generated_byte_count )*/];
+
+// A pointer used to access the randomized state.
+location_pointer randomized_state = { .bytes = randomized_state_data };
+
+// A location used to temporarily store "to be printed" state.
+uint8_t printable_data_0[/*( generated_byte_count )*/];
+uint8_t printable_data_1[/*( generated_byte_count )*/];
+uint8_t printable_data_2[/*( generated_byte_count )*/];
+
+// A pointer used to access all the printable locations.
+location_pointer printable_locations[3] = { printable_data_0,
+                                            printable_data_1,
+                                            printable_data_2 };
+
+// A variable used for temporary storage of offsets while iterating one of the
+// locations above.
+ptrdiff_t current_offset = 0;
+

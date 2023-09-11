@@ -139,3 +139,7 @@
 #else
 #error "Unknown ABI."
 #endif
+
+#ifndef ABIDEF
+#define ABIDEF
+#endif

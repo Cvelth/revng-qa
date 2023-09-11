@@ -1,5 +1,5 @@
 /*#-
-This template file == distributed under the MIT License. See LICENSE.md for details.
+This template file is distributed under the MIT License. See LICENSE.md for details.
 #*/
 
 /*(- generation_notice )*/
@@ -15,12 +15,10 @@ ifndef rax
 .model flat, c
 endif
 
+extern randomized_state_data: /*( intel_register_type )*/
+extern printable_data_0: /*( intel_register_type )*/
+extern printable_data_1: /*( intel_register_type )*/
 extern saved_return_address: /*( intel_register_type )*/
-extern randomized_state: /*( intel_register_type )*/
-extern printable_data: /*( intel_register_type )*/
-
-extern regenerate_state: proc
-extern print_current_state: proc
 
 /*{ for name, arguments in argument_functions.items() -}*/
 extern test_/*( name )*/: proc
@@ -55,60 +53,27 @@ execute_/*( name )*/ endp
 
 /*{ endfor -}*/
 
-/*{ for name, arguments in return_value_functions.items() }*/
-/*{- if current_style == 'gcc' -}*/
-.global execute_/*( name )*/_location
-execute_/*( name )*/_location:
-/*{- elif current_style == 'msvc' -}*/
-execute_/*( name )*/_location proc
-/*{- endif }*/
-  /*( save_return_address )*/
-  /*( fill_stack_with_random_data )*/
-  /*( fill_registers_with_random_data )*/
-  /*( call_a_function("test_" + name + "_location") )*/
-  /*( save_registers )*/
-/*{- if current_style == 'gcc' }*/
-#ifndef CalleeIsResponsibleForStackCleanup
-/*{- endif }*/
-  /*( restore_stack )*/
-/*{- if current_style == 'gcc' }*/
-#endif
-/*{- endif }*/
-  /*( restore_return_address )*/
-  /*( return_from_function )*/
-/*{ if current_style == 'msvc' -}*/
-execute_/*( name )*/_location endp
-/*{- endif }*/
-
-/*{ endfor -}*/
-
 /*{ if current_style == 'gcc' -}*/
-.global set_return_value_up
-set_return_value_up:
+.global put_current_cpu_state_into_the_printable_location_0
+put_current_cpu_state_into_the_printable_location_0:
 /*{- elif current_style == 'msvc' -}*/
-set_return_value_up proc
+put_current_cpu_state_into_the_printable_location_0 proc
 /*{- endif }*/
-  /*( save_return_address )*/
-  /*( call_a_function("regenerate_state") )*/
-  /*( call_a_function("print_current_state") )*/
-  /*( fill_stack_with_random_data )*/
-  /*( restore_return_address )*/
-  /*( fill_registers_with_random_data )*/
+  /*( save_the_state(0) )*/
   /*( return_from_function )*/
 /*{ if current_style == 'msvc' -}*/
-set_return_value_up endp
+put_current_cpu_state_into_the_printable_location_0 endp
 /*{- endif }*/
 
 /*{ if current_style == 'gcc' -}*/
-.global restore_stack_pointer
-restore_stack_pointer:
+.global put_current_cpu_state_into_the_printable_location_1
+put_current_cpu_state_into_the_printable_location_1:
 /*{- elif current_style == 'msvc' -}*/
-restore_stack_pointer proc
+put_current_cpu_state_into_the_printable_location_1 proc
 /*{- endif }*/
-  /*( save_return_address )*/
-  /*( restore_stack )*/
-  /*( restore_return_address )*/
+  /*( save_the_state(1) )*/
   /*( return_from_function )*/
 /*{ if current_style == 'msvc' -}*/
-restore_stack_pointer endp
-/*{ endif }*/
+put_current_cpu_state_into_the_printable_location_1 endp
+/*{- endif }*/
+
