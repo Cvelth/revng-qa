@@ -1,11 +1,8 @@
 tags:
-  - name: well-known
-    variables:
-      CFLAGS:
-        - -Wl,--entry=0x1000
-        - -ggdb
+  - name: for-signal-research
+
 sources:
-  - tags: [well-known, nostdlib]
+  - tags: [for-signal-research]
     repeat-for:
       - [arm, static]
       - [mips, static]
@@ -13,7 +10,7 @@ sources:
       - [aarch64, static]
       - [x86-64, static]
       - [s390x, static]
+      - [native, dynamic]
       - [i386, static]
-    prefix: share/revng/test/tests/well-known-models
     members:
-      - libc.c
+      - share/revng/test/tests/abi/signals.c
