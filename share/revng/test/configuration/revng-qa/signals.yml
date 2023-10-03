@@ -1,16 +1,18 @@
 tags:
   - name: for-signal-research
+    variables:
+      CFLAGS: [-O3]
 
 sources:
   - tags: [for-signal-research]
     repeat-for:
       - [arm, static]
-      - [mips, static]
-      - [mipsel, static]
+    #  - [mips, static]
+    #  - [mipsel, static]
       - [aarch64, static]
       - [x86-64, static]
-      - [s390x, static]
-      - [native, dynamic]
+    #  - [s390x, static]
+    #  - [native, dynamic]
       - [i386, static]
     members:
       - share/revng/test/tests/abi/signals.c

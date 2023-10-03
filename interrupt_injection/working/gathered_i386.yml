@@ -1,0 +1,29 @@
+
+#include <stdint.h>
+
+struct section {
+  char name[5];
+  uint64_t size, vma, file_offset;
+};
+
+struct memory {
+  char name[23];
+  uint64_t address;
+};
+
+struct callsite {
+  uint64_t before, after;
+};
+struct function : struct memory {
+  uint64_t callsite_count;
+  struct callsite callsites[1];
+};
+
+struct input {
+  uint64_t start;
+  struct section sections[1];
+  struct memory variables[1];
+  struct function functions[3];
+};
+
+    
