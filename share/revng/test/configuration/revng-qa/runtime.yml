@@ -16,7 +16,9 @@ sources:
       - [mips, static]
       - [mipsel, static]
       # - [aarch64, static]
+      # - [apple-aarch64, static]
       - [x86-64, static]
+      - [apple-x86-64, static]
       - [s390x, static]
       - [native, dynamic]
       - [i386, static]
@@ -30,6 +32,7 @@ sources:
   - tags: [simple-executable]
     repeat-for:
       - [aarch64, static]
+      - [apple-aarch64, static]
     prefix: share/revng/test/tests/runtime
     members:
       - function-call.c
@@ -43,7 +46,9 @@ sources:
       - [mips, static]
       - [mipsel, static]
       # - [aarch64, static]
+      # - [apple-aarch64, static]
       - [x86-64, static]
+      - [apple-x86-64, static]
       - [s390x, static]
       - [native, dynamic]
       - [i386, static]
@@ -52,5 +57,6 @@ sources:
   - tags: [simple-executable, one-per-architecture]
     repeat-for:
       - [aarch64, static]
+      - [apple-aarch64, static]
     members:
       - share/revng/test/tests/runtime/calc.c

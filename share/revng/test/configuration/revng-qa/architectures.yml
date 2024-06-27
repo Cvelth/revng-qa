@@ -46,6 +46,8 @@ tags:
         - -Wl,-Ttext-segment=0x20000
       COMMON_CFLAGS:
         - -DTARGET_arm
+      CLANG_FLAGS:
+        - --target=arm
   - name: x86-64
     implies: [cross-compiler]
     variables:
@@ -55,6 +57,8 @@ tags:
       OBJDUMP_FLAGS: -Mintel
       COMMON_CFLAGS:
         - -DTARGET_x86_64
+      CLANG_FLAGS:
+        - --target=x86-64
   - name: mips
     implies: [cross-compiler]
     variables:
@@ -63,6 +67,8 @@ tags:
       QEMU_NAME: mips
       COMMON_CFLAGS:
         - -DTARGET_mips
+      CLANG_FLAGS:
+        - --target=mips
   - name: mipsel
     implies: [cross-compiler]
     variables:
@@ -71,6 +77,8 @@ tags:
       QEMU_NAME: mipsel
       COMMON_CFLAGS:
         - -DTARGET_mipsel
+      CLANG_FLAGS:
+        - --target=mipsel
   - name: i386
     implies: [cross-compiler]
     variables:
@@ -79,6 +87,8 @@ tags:
       QEMU_NAME: i386
       COMMON_CFLAGS:
         - -DTARGET_i386
+      CLANG_FLAGS:
+        - --target=x86
   - name: s390x
     implies: [cross-compiler]
     variables:
@@ -87,6 +97,8 @@ tags:
       QEMU_NAME: s390x
       COMMON_CFLAGS:
         - -DTARGET_s390x
+      CLANG_FLAGS:
+        - --target=systemz
   - name: aarch64
     implies: [cross-compiler]
     variables:
@@ -95,3 +107,14 @@ tags:
       QEMU_NAME: aarch64
       COMMON_CFLAGS:
         - -DTARGET_aarch64
+      CLANG_FLAGS:
+        - --target=aarch64
+
+  - name: apple-x86-64
+    implies: [x86-64, clang-only]
+    CLANG_FLAGS:
+      - --target=x86_64-apple-macos-macho
+  - name: apple-aarch64
+    implies: [aarch64, clang-only]
+    CLANG_FLAGS:
+      - --target=aarch64-apple-macos-macho -mcpu=apple-m1
