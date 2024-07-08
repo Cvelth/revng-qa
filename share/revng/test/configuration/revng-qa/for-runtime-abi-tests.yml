@@ -222,9 +222,9 @@ sources:
 
       # "gcc editions" are not tested by default to limit test run time.
       # Uncomment, if you need to verify these work.
-      # - [i386-cdecl-microsoft-abi-gcc-edition]
-      # - [i386-fastcall-microsoft-abi-gcc-edition]
-      # - [i386-stdcall-microsoft-abi-gcc-edition]
+      - [i386-cdecl-microsoft-abi-gcc-edition]
+      - [i386-fastcall-microsoft-abi-gcc-edition]
+      - [i386-stdcall-microsoft-abi-gcc-edition]
 
       - [i386-cdecl-microsoft-abi, windows]
       - [i386-fastcall-microsoft-abi, windows]
@@ -246,8 +246,8 @@ sources:
       # - [arm-aapcs-apple-abi]
 
       # TODO: re-enable once mips testing suite is fixed.
-      # - [mips-systemv-abi]
-      # - [mipsel-systemv-abi]
+      - [mips-systemv-abi]
+      - [mipsel-systemv-abi]
 
       # TODO: re-enable once qemu stops segfaulting on these binaries
       #       (when we update it?).
