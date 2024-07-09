@@ -18,5 +18,14 @@ add_custom_target(
     "${CMAKE_SOURCE_DIR}/scripts/abi_artifact_generator/config/"
     "${CMAKE_BINARY_DIR}/abi_artifact_generated/")
 
+add_custom_target(
+  generated_abi_artifact_split_sources ALL
+  COMMAND
+    "python3" "${CMAKE_SOURCE_DIR}/scripts/abi_artifact_generator/generate.py"
+    "${CMAKE_SOURCE_DIR}/scripts/abi_artifact_generator/templates/"
+    "${CMAKE_SOURCE_DIR}/scripts/abi_artifact_generator/config/"
+    "${CMAKE_BINARY_DIR}/abi_artifact_generated/"
+    "--split_file_mode")
+
 install(DIRECTORY "${CMAKE_BINARY_DIR}/abi_artifact_generated/"
         DESTINATION "share/revng/test/tests/abi/")

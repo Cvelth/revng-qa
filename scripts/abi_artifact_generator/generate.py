@@ -30,6 +30,11 @@ def accept_arguments():
         type=str,
         help="Specifies the directory where to output the results to",
     )
+    parser.add_argument(
+        "--split_file_mode",
+        action="store_true",
+        help="When set to true, each test function generates a separate binary"
+    )
 
     return parser.parse_args()
 
@@ -97,7 +102,17 @@ def get_generation_notice():
  */"""
 
 
-def render_functions(jinja_environment, config, functions, out_dir: str):
+def render_functions_impl(jinja_environment, path: str, dictionary, out_dir: str):
+    filename = "functions.h"
+    result_path = out_dir + "/" + path + filename
+    render_helper(jinja_environment, filename, result_path, dictionary)
+
+    filename = "functions.inc"
+    result_path = out_dir + "/" + path + filename
+    render_helper(jinja_environment, filename, result_path, dictionary)
+
+
+def render_functions(jinja_environment, config, functions, out_dir: str, split_file_mode: bool):
     dictionary = {
         "generation_notice": get_generation_notice(),
         "maximum_argument_count": config["maximum_argument_count"],
@@ -108,16 +123,37 @@ def render_functions(jinja_environment, config, functions, out_dir: str):
         "return_value_functions": functions["return_value_tests"],
     }
 
-    filename = "functions.h"
-    result_path = out_dir + "/" + filename
+    if not split_file_mode:
+        render_functions_impl(jinja_environment, "", dictionary, out_dir)
+    else:
+        dictionary["return_value_functions"] = {}
+        for function, arguments in functions["argument_tests"].items():
+            dictionary["argument_functions"] = { function: arguments }
+            path = "split/" + function + "/"
+            render_functions_impl(jinja_environment, path, dictionary, out_dir)
+
+        dictionary["argument_functions"] = {}
+        for function, return_value in functions["return_value_tests"].items():
+            dictionary["return_value_functions"] = { function: return_value }
+            path = "split/" + function + "/"
+            render_functions_impl(jinja_environment, path, dictionary, out_dir)
+
+
+def render_function_description_impl(jinja_environment, path: str, dictionary, out_dir: str):
+    filename = "constants.h"
+    result_path = out_dir + "/" + path + filename
     render_helper(jinja_environment, filename, result_path, dictionary)
 
-    filename = "functions.inc"
-    result_path = out_dir + "/" + filename
+    filename = "decoders.inc"
+    result_path = out_dir + "/" + path + filename
+    render_helper(jinja_environment, filename, result_path, dictionary)
+
+    filename = "setup.inc"
+    result_path = out_dir + "/" + path + filename
     render_helper(jinja_environment, filename, result_path, dictionary)
 
 
-def render_function_description(jinja_env, architectures, config, functions, out_dir):
+def render_function_description(jinja_env, architectures, config, functions, out_dir, split_file_mode: bool):
     for architecture_name, architecture in architectures.items():
         dictionary = {
             "generation_notice": get_generation_notice(),
@@ -140,20 +176,25 @@ def render_function_description(jinja_env, architectures, config, functions, out
         dictionary["generated_byte_count"] = dictionary["stack_byte_count"] + combined_registers
         assert dictionary["generated_byte_count"] % dictionary["register_size"] == 0
 
-        function_count = len(functions["argument_tests"]) + len(functions["return_value_tests"])
-        dictionary["function_count"] = function_count
+        if not split_file_mode:
+            function_count = len(functions["argument_tests"]) + len(functions["return_value_tests"])
+            dictionary["function_count"] = function_count
+            render_function_description_impl(jinja_env, architecture_name + "/", dictionary, out_dir)
 
-        filename = "constants.h"
-        path = out_dir + "/" + architecture_name + "/" + filename
-        render_helper(jinja_env, filename, path, dictionary)
+        else:
+            dictionary["function_count"] = 1
 
-        filename = "decoders.inc"
-        path = out_dir + "/" + architecture_name + "/" + filename
-        render_helper(jinja_env, filename, path, dictionary)
+            dictionary["return_value_functions"] = {}
+            for function, arguments in functions["argument_tests"].items():
+                dictionary["argument_functions"] = { function: arguments }
+                path = "split/" + function + "/" + architecture_name + "/"
+                render_function_description_impl(jinja_env, path, dictionary, out_dir)
 
-        filename = "setup.inc"
-        path = out_dir + "/" + architecture_name + "/" + filename
-        render_helper(jinja_env, filename, path, dictionary)
+            dictionary["argument_functions"] = {}
+            for function, return_value in functions["return_value_tests"].items():
+                dictionary["return_value_functions"] = { function: return_value }
+                path = "split/" + function + "/" + architecture_name + "/"
+                render_function_description_impl(jinja_env, path, dictionary, out_dir)
 
 
 def main():
@@ -163,8 +204,8 @@ def main():
     environment = setup_jinja_environment(arguments)
 
     out_dir = str(arguments.output_directory)
-    render_functions(environment, config, functions, out_dir)
-    render_function_description(environment, architectures, config, functions, out_dir)
+    render_functions(environment, config, functions, out_dir, arguments.split_file_mode)
+    render_function_description(environment, architectures, config, functions, out_dir, arguments.split_file_mode)
 
     return 0
 
