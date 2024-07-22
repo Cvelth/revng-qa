@@ -42,6 +42,7 @@ commands:
       - type: source
         filter: windows and simple-executable
     suffix: .exe
+    pool: wine
     command: |-
       ROOT="$$PWD";
       TEMP="$$(temp -d)";
@@ -53,6 +54,7 @@ commands:
       - type: source
         filter: windows and simple-executable
     suffix: .pdb
+    pool: wine
     command: |-
       ROOT="$$PWD";
       TEMP="$$(temp -d)";
